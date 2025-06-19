@@ -1,0 +1,145 @@
+managed implementation in class zbp_03_r_travel unique;
+strict ( 2 );
+
+with draft;
+
+define behavior for Z03_R_TRAVEL alias Travel
+persistent table z03_travel ##UNMAPPED_FIELD
+draft table z03_travel_d
+lock master
+total etag ChangedAt
+authorization master ( global, instance )
+etag master LocChangedAt
+early numbering
+{
+  create ( authorization : global );
+  update ( features : instance );
+  delete;
+  field (readonly) Status, Duration, ChangedAt, ChangedBy, LocChangedAt;
+  //field (readonly : update, mandatory : create ) AgencyId, TravelId;
+  field (readonly ) AgencyId, TravelId;
+  field ( mandatory ) Description, EndDate;
+  field ( features : instance ) CustomerId, BeginDate;
+
+  validation validateDescription on save { create;
+                                           field Description; }
+  validation validateCustomer on save { create; field CustomerId; }
+  validation validateBeginDAte on save { create; field BeginDate; }
+  validation validateEndDAte on save { create; field EndDate; }
+  validation validateDateSequence on save { create; field BeginDate, EndDate;}
+
+  determination determineStatus on modify { create; update;}
+  determination determineStatusSave on save { create; update;}
+  determination determineDuration on save
+  {
+    field BeginDate, EndDate;
+  }
+
+  determine action checkCustomer
+  {
+    validation validateCustomer;
+  }
+
+  determine action adjustDuration
+  {
+    validation validateBeginDAte;
+    validation validateEndDAte;
+    validation validateDateSequence;
+    determination determineDuration;
+  }
+
+  side effects
+  {
+    determine action checkCustomer
+        executed on field CustomerId
+        affects messages;
+
+    determine action adjustDuration
+        executed on field BeginDate, field EndDate affects field Duration, messages;
+  }
+
+  draft action Edit;
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Resume;
+  draft determine action Prepare
+  {
+    validation validateCustomer;
+    validation validateBeginDAte;
+    validation validateDateSequence;
+    validation validateDescription;
+    validation validateEndDAte;
+    validation Item~validateFlightDate;
+  }
+
+  static action issue_message;
+  action ( features : instance ) cancel_travel;
+
+  mapping for z03_travel corresponding
+  {
+    AgencyId = agency_id;
+    TravelId = travel_id;
+    Description = description;
+    CustomerId = customer_id;
+    BeginDate = begin_date;
+    EndDate = end_date;
+    Status = status;
+    ChangedAt = changed_at;
+    ChangedBy = changed_by;
+    LocChangedAt = loc_changed_at;
+  }
+
+  association _TravelItem { create; with draft; }
+}
+
+define behavior for Z03_R_TRAVELITEM alias Item
+//persistent table z03_tritem ##UNMAPPED_FIELD
+with unmanaged save
+draft table z03_tritem_d
+authorization dependent by _Travel
+lock dependent by _Travel
+etag master LocChangedAt
+{
+	update;
+	delete;
+	
+	validation validateFlightDate on save { create; field FlightDate; }
+	determination determineTravelDates on save { create; update; field FlightDate; }
+	
+	field (readonly,numbering : managed) ItemUuid;
+	field (readonly) AgencyId, TravelId;
+	
+	mapping for z03_tritem corresponding
+	{
+	   ItemUuid = item_uuid;
+	   AgencyId = agency_id;
+	   TravelId = travel_id;
+	   CarrierId = carrier_id;
+	   ConnectionId = connection_id;
+	   FlightDate = flight_date;
+	   BookingId = booking_id;
+	   PassengerFirstName = passenger_first_name;
+	   PassengerLastName = passenger_last_name;
+	   ChangedAt = changed_at;
+	   ChangedBy = changed_by;
+	   LocChangedAt = loc_changed_at;
+	}
+	
+	mapping for /lrn/437_s_tritem control /lrn/437_s_tritemx corresponding
+	{
+	   ItemUuid = item_uuid;
+	   AgencyId = agency_id;
+	   TravelId = travel_id;
+	   CarrierId = carrier_id;
+	   ConnectionId = connection_id;
+	   FlightDate = flight_date;
+	   BookingId = booking_id;
+	   PassengerFirstName = passenger_first_name;
+	   PassengerLastName = passenger_last_name;
+	   ChangedAt = changed_at;
+	   ChangedBy = changed_by;
+	   LocChangedAt = loc_changed_at;
+	 }
+	
+	association _Travel { with draft; }
+}

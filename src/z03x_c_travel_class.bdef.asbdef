@@ -1,0 +1,10 @@
+extension for projection;
+
+extend behavior for Z03_C_TRAVEL
+{
+}
+
+extend behavior for Z03_C_TravelItem
+{
+    use action ZZcheckClass;
+}

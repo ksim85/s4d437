@@ -50,6 +50,15 @@ CLASS lsc_z03_r_travel IMPLEMENTATION.
 
     ENDLOOP.
 
+    IF create-travel IS NOT INITIAL.
+        DATA event_in TYPE TABLE FOR EVENT Z03_R_Travel~TravelCreated.
+
+        event_in = VALUE #( for t in create-travel ( AgencyId = t-AgencyId
+                                                     TravelId = t-TravelId
+                                                     origin = 'Z03_R_TRAVEL_1' ) ).
+        RAISE ENTITY EVENT z03_r_travel~TravelCreated FROM event_in.
+
+    ENDIF.
   ENDMETHOD.
 
   METHOD map_message.

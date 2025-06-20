@@ -2,8 +2,11 @@ projection;
 strict ( 2 );
 use draft;
 
+extensible;
+
 define behavior for Z03_C_TRAVEL //alias <alias_name>
 use etag
+extensible
 {
   use create;
   use update;
@@ -26,6 +29,7 @@ use etag
 
 define behavior for Z03_C_TravelItem //alias alias
 use etag
+extensible
 {
 	use update;
 	use delete;
